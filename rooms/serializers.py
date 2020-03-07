@@ -36,6 +36,10 @@ class WriteRoomSerializer(serializers.Serializer):
     check_out = serializers.TimeField(default="00:00:00")
     instant_book = serializers.BooleanField(default=False)
 
+    # 메서드 활용하기 위해 커스텀
+    def create(self, validated_data):
+        return Room.objects.create(**validated_data)  # method create should return an object!!
+
 
 
 
