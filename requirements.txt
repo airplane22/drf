@@ -1,0 +1,5 @@
+flake8==3.7.9
+black==19.10b0
+django==3.0.3
+pillow==6.2.1
+django-seed==0.1.9
