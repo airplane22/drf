@@ -116,10 +116,11 @@ class RoomView(APIView):
             serializer = WriteRoomSerializer(room, data=request.data, partial=True)
             # instance 받았으므로 serializer 가 update 호출. partial=True : partial update 가능하게 해줌(required 다 안보내도 update)
             if serializer.is_valid():
-                serializer.save()  # option update 호출
+                room = serializer.save()  # option update 호출
+                return Response(ReadRoomSerializer(room).data)  # obj - ReadRoomSerializer 다시 호출 Response(obj or qs) 안돼!
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            return Response()
+            # return Response()
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
