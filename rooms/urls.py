@@ -13,7 +13,9 @@ app_name = "rooms"
 
 # urlpatterns = [path("list/", views.list_rooms)]
 urlpatterns = [
-    path("", views.rooms_view),
-    path("<int:pk>/", views.SeeRoomView.as_view()),  # as_view() : 클래스 함수를 통해 인스턴스 생성
+    # path("", views.rooms_view),
+    path("", views.RoomsView.as_view()),
+    # path("<int:pk>/", views.SeeRoomView.as_view()),  # as_view() : 클래스 함수를 통해 인스턴스 생성
+    path("<int:pk>/", views.RoomView.as_view()),  # as_view() : 클래스 함수를 통해 인스턴스 생성
     ]
 

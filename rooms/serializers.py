@@ -40,6 +40,20 @@ class WriteRoomSerializer(serializers.Serializer):
     def create(self, validated_data):
         return Room.objects.create(**validated_data)  # method create should return an object!!
 
+    def validate(self, data):  # 전체 field validation
+        check_in = data.get('check_in')
+        check_out = data.get('check_out')
+        if check_in == check_out:
+            raise serializers.ValidationError("Not enough time between changes")  # : "non_field_errors"
+        else:
+            return data  # data 보내야 확인 가능
+
+    def validate_beds(self, beds):  # validate_<fieldname>() validation
+        if beds < 5:
+            raise serializers.ValidationError("Your house is too small")  # validation error raise : "beds"
+        else:
+            return beds
+
 
 
 
