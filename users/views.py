@@ -1,9 +1,11 @@
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from rooms.models import Room
+from rooms.serializers import RoomSerializer
 from users.models import User
 from users.serializers import ReadUserSerializer, WriteUserSerializer
 
@@ -32,7 +34,7 @@ class MeView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@ api_view(["GET"])  # 크기 작을때는 fbv 활용
+@api_view(["GET"])  # 크기 작을때는 fbv 활용
 def user_detail(request, pk):
     try:
         user = User.objects.get(pk=pk)
@@ -43,4 +45,41 @@ def user_detail(request, pk):
         # validated_data : is an OrderedDict and you can see it only after is_valid() && is_valid() == True
     except User.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET", "POST"])
+@permission_classes(["IsAuthenticated"])
+def toggle_fav(request):
+    room = request.data.get("room")
+    print(room)
+
+
+class FavsView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        serializer = RoomSerializer(user.favs.all(), many=True).data
+        return Response(serializer)
+
+    def put(self, request):
+        pk = request.data.get("pk", None)
+        user = request.user
+        if pk is not None:
+            try:
+                room = Room.objects.get(pk=pk)
+
+                # favs 에 있으면 삭제, 없으면 추가
+                # 두가지 방법: url 인자로 받기 / data 로 받기
+
+                if room in user.favs.all():
+                    user.favs.remove(room)
+                else:
+                    user.favs.add(room)
+                return Response()
+            except Room.DoesNotExist:
+                pass
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 

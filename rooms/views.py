@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Room
-from .serializers import ReadRoomSerializer, WriteRoomSerializer
+from .serializers import RoomSerializer
 
 
 # from rest_framework.decorators import api_view
@@ -35,20 +35,20 @@ from .serializers import ReadRoomSerializer, WriteRoomSerializer
 def rooms_view(request):
     if request.method == "GET":
         rooms = Room.objects.all()[:5]
-        serializer = ReadRoomSerializer(rooms, many=True).data
+        serializer = RoomSerializer(rooms, many=True).data
         return Response(serializer)  # django response 와 rest_framework Response 는 다름!
     elif request.method == "POST":
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         # print(request.data)  # dict type, not json 출력됨
-        serializer = WriteRoomSerializer(data=request.data)  # instance 안받고 data 만 인수로 받아서 serializer initiate
+        serializer = RoomSerializer(data=request.data)  # instance 안받고 data 만 인수로 받아서 serializer initiate
         print(serializer)
         print(dir(serializer))  # serializer 어트리뷰트(대부분 메서드) 확인 --create, update, save 중요
         print(serializer.is_valid())  # 전송된 data 가 serializer valid 한지 확인 ( 모든 필드 충족시키는지)
         if serializer.is_valid():
             # serializer.create()  # never call create, update method directly
             room = serializer.save(user=request.user)  # save() 가 create / update 구분해서 call 해준다 + validated_data 자동 전송됨
-            room_serializer = ReadRoomSerializer(room).data
+            room_serializer = RoomSerializer(room).data
             return Response(data=room_serializer, status=status.HTTP_200_OK)
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -58,21 +58,21 @@ class RoomsView(APIView):
 
     def get(self, request):
         rooms = Room.objects.all()[:5]
-        serializer = ReadRoomSerializer(rooms, many=True).data
+        serializer = RoomSerializer(rooms, many=True).data
         return Response(serializer)  # django response 와 rest_framework Response 는 다름!
 
     def post(self, request):
         if not request.user.is_authenticated:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         # print(request.data)  # dict type, not json 출력됨
-        serializer = WriteRoomSerializer(data=request.data)
+        serializer = RoomSerializer(data=request.data)
         print(serializer)
         print(dir(serializer))  # serializer 어트리뷰트(대부분 메서드) 확인 --create, update, save 중요
         print(serializer.is_valid())  # 전송된 data 가 serializer valid 한지 확인 ( 모든 필드 충족시키는지)
         if serializer.is_valid():
             # serializer.create()  # never call create, update method directly
             room = serializer.save(user=request.user)  # save method 가 create / update call 해준다 + validated_data 자동 전송됨
-            room_serializer = ReadRoomSerializer(room).data
+            room_serializer = RoomSerializer(room).data
             return Response(data=room_serializer, status=status.HTTP_200_OK)
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -103,7 +103,7 @@ class RoomView(APIView):
         #     return Response(status=status.HTTP_404_NOT_FOUND)
         room = self.get_room(pk)
         if room is not None:
-            serializer = ReadRoomSerializer(room).data
+            serializer = RoomSerializer(room).data
             return Response(serializer)
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -113,11 +113,11 @@ class RoomView(APIView):
         if room is not None:
             if room.user != request.user:
                 return Response(status=status.HTTP_403_FORBIDDEN)
-            serializer = WriteRoomSerializer(room, data=request.data, partial=True)
+            serializer = RoomSerializer(room, data=request.data, partial=True)
             # instance 받았으므로 serializer 가 update 호출. partial=True : partial update 가능하게 해줌(required 다 안보내도 update)
             if serializer.is_valid():
                 room = serializer.save()  # option update 호출
-                return Response(ReadRoomSerializer(room).data)  # obj - ReadRoomSerializer 다시 호출 Response(obj or qs) 안돼!
+                return Response(RoomSerializer(room).data)  # obj - ReadRoomSerializer 다시 호출 Response(obj or qs) 안돼!
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             # return Response()
