@@ -21,19 +21,23 @@ class ReadRoomSerializer(serializers.ModelSerializer):
         exclude = ("modified",)
 
 
-class WriteRoomSerializer(serializers.Serializer):
+class WriteRoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        exclude = ("user", "modified", "created")
 
-    name = serializers.CharField(max_length=140)
-    address = serializers.CharField(max_length=140)
-    price = serializers.IntegerField(help_text="USD per night")
-    beds = serializers.IntegerField(default=1)
-    lat = serializers.DecimalField(max_digits=10, decimal_places=6)
-    lng = serializers.DecimalField(max_digits=10, decimal_places=6)
-    bedrooms = serializers.IntegerField(default=1)
-    bathrooms = serializers.IntegerField(default=1)
-    check_in = serializers.TimeField(default="00:00:00")
-    check_out = serializers.TimeField(default="00:00:00")
-    instant_book = serializers.BooleanField(default=False)
+    # Serializer 일때
+    # name = serializers.CharField(max_length=140)
+    # address = serializers.CharField(max_length=140)
+    # price = serializers.IntegerField(help_text="USD per night")
+    # beds = serializers.IntegerField(default=1)
+    # lat = serializers.DecimalField(max_digits=10, decimal_places=6)
+    # lng = serializers.DecimalField(max_digits=10, decimal_places=6)
+    # bedrooms = serializers.IntegerField(default=1)
+    # bathrooms = serializers.IntegerField(default=1)
+    # check_in = serializers.TimeField(default="00:00:00")
+    # check_out = serializers.TimeField(default="00:00:00")
+    # instant_book = serializers.BooleanField(default=False)
 
     # 메서드 활용하기 위해 커스텀
     def create(self, validated_data):  # Question validated_data 의 의미
