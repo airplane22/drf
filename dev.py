@@ -9,4 +9,5 @@ os.system('doskey gl= git log')
 
 
 os.system('doskey rs=python manage.py runserver')
-os.system('doskey pms=python manage.py shell')
+os.system('doskey mg=python manage.py migrate')
+os.system('doskey sh=python manage.py shell')
