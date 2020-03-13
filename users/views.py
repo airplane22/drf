@@ -1,3 +1,6 @@
+import jwt
+from django.conf import settings
+from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -93,3 +96,18 @@ def user_detail(request, pk):
     except User.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+
+@api_view(["POST"])
+def login(request):
+    username = request.data.get("username")
+    password = request.data.get("password")
+    if not username or not password:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        # jwt : json web token - 개인정보 포함 X, pk 같은 식별자만. 토큰은 누구나 해독 가능 / 우리 토큰이 변경되었는지 변경되지 않았는지를 확인하는 것.
+        # user 가 토큰 보내면 다시 확인해서 authentication. not from cookies, from token!
+        encoded_jwt = jwt.encode({'id': user.pk}, settings.SECRET_KEY, algorithm='HS256')  # never import settings.py / import from django.settings
+        return Response(data={"token":encoded_jwt})  # data= 언제 쓰고 언제 안쓰는가?
+    else:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
