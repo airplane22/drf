@@ -7,8 +7,18 @@ from rest_framework.views import APIView
 from rooms.models import Room
 from rooms.serializers import RoomSerializer
 from users.models import User
-from users.serializers import ReadUserSerializer, WriteUserSerializer
+from users.serializers import UserSerializer
 
+
+class UsersView(APIView):
+
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)  # create 이니가 instance 안받고, partial=True 쓰면 안돼 모두 필요 / password 는 입력받고 create 에서 바꿔줄예정
+        if serializer.is_valid():
+            new_user = serializer.save()
+            return Response(UserSerializer(new_user).data)  #question .data 안써도돼? nico는 안쓴거같던데
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # MeView / user_detail 분리 이유 - MeView 는 url 에서 pk 안받는다. pk 안받아도 pk 값 확인할 수 있는 url 필요.
 
@@ -23,28 +33,15 @@ class MeView(APIView):
         #     return Response(ReadUserSerializer(request.user).data)
         # else:
         #     return Response(status=status.HTTP_401_UNAUTHORIZED)
-        return Response(ReadUserSerializer(request.user).data)
+        return Response(UserSerializer(request.user).data)
 
     def put(self, request):
-        serializer = WriteUserSerializer(request.user, data=request.data, partial=True)
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response()
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["GET"])  # 크기 작을때는 fbv 활용
-def user_detail(request, pk):
-    try:
-        user = User.objects.get(pk=pk)
-        return Response(ReadUserSerializer(user).data)
-        # question data vs validated_data
-        # data vs validated_data
-        # data : is a dict and you can see it only after is_valid()
-        # validated_data : is an OrderedDict and you can see it only after is_valid() && is_valid() == True
-    except User.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(["GET", "POST"])
@@ -82,4 +79,17 @@ class FavsView(APIView):
                 pass
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])  # 크기 작을때는 fbv 활용
+def user_detail(request, pk):
+    try:
+        user = User.objects.get(pk=pk)
+        return Response(UserSerializer(user).data)
+        # question data vs validated_data
+        # data vs validated_data
+        # data : is a dict and you can see it only after is_valid()
+        # validated_data : is an OrderedDict and you can see it only after is_valid() && is_valid() == True
+    except User.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
