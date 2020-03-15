@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Room
+from .permissions import IsOwner
 from .serializers import RoomSerializer
 
 
@@ -22,6 +23,7 @@ class RoomViewSet(ModelViewSet):  # drf viewsets
             permission_classes = [permissions.IsAuthenticated]
         else:  # elif self.action == "delete" or self.action == ""
             permission_classes = [IsOwner]
+        return [permission() for permission in permission_classes]  # permission_classes 에 있는 모든 permission 수행해라(for문 돌리는 효과)
 
 
     # anybody can list rooms / only authorized can post
