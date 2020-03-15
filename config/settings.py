@@ -140,4 +140,9 @@ AUTH_USER_MODEL = "users.User"
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 'rest_framework.authentication.BasicAuthentication',
+        'config.authentication.JWTAuthentication',  # custom authentication : JWTAuthenticaion 추가
+        'rest_framework.authentication.SessionAuthentication',  # apiview 쓸때 나오는 화면
+    ]
 }

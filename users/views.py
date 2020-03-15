@@ -107,7 +107,7 @@ def login(request):
     if user is not None:
         # jwt : json web token - 개인정보 포함 X, pk 같은 식별자만. 토큰은 누구나 해독 가능 / 우리 토큰이 변경되었는지 변경되지 않았는지를 확인하는 것.
         # user 가 토큰 보내면 다시 확인해서 authentication. not from cookies, from token!
-        encoded_jwt = jwt.encode({'id': user.pk}, settings.SECRET_KEY, algorithm='HS256')  # never import settings.py / import from django.settings
+        encoded_jwt = jwt.encode({'pk': user.pk}, settings.SECRET_KEY, algorithm='HS256')  # never import settings.py / import from django.settings
         return Response(data={"token":encoded_jwt})  # data= 언제 쓰고 언제 안쓰는가?
     else:
         return Response(status=status.HTTP_401_UNAUTHORIZED)
