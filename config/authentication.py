@@ -28,4 +28,3 @@ class JWTAuthentication(authentication.BaseAuthentication):
         # except jwt.exceptions.DecodeError:  # jwt token 변경됨. 그냥 none 반환해도 ok
         #     raise exceptions.AuthenticationFailed(detail="JWT Format Invalid")
 
-        # question sessionauthentication(uesrname, password) 없이 jwtauthentication만으로 users/me 불러오는데 400에러 왜 안나?

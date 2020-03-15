@@ -28,7 +28,7 @@ class UsersView(APIView):
 
 class MeView(APIView):
 
-    permission_classes = [IsAuthenticated]  # fbv 에서는 @permission_classes([IsAuthenticated])
+    permission_classes = [IsAuthenticated]  # fbv 에서는 @permission_classes([IsAuthenticated]) question header jwttoken으로 authenticated 되면 안되지 않나? 공개키인데
 
     def get(self, request):
         # permission_classes = [IsAuthenticated] 로 아래 주석 대체 가능
