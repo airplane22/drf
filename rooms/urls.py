@@ -16,6 +16,7 @@ urlpatterns = [
     # path("", views.rooms_view),
     path("", views.RoomsView.as_view()),
     # path("<int:pk>/", views.SeeRoomView.as_view()),  # as_view() : 클래스 함수를 통해 인스턴스 생성
+    path("search/", views.room_search),
     path("<int:pk>/", views.RoomView.as_view()),  # as_view() : 클래스 함수를 통해 인스턴스 생성
     ]
 

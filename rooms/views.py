@@ -1,6 +1,7 @@
 # from rest_framework.generics import ListAPIView
 from rest_framework import status
 from rest_framework.generics import RetrieveAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 # generics : page 등의 정보를 가짐
 from rest_framework.decorators import api_view
@@ -31,35 +32,46 @@ from .serializers import RoomSerializer
 #     queryset = Room.objects.all()
 #     serializer_class = RoomSerializer
 
-@api_view(["GET", "POST"])  # django 가 아니라 rest_framework 에서 view 처리
-def rooms_view(request):
-    if request.method == "GET":
-        rooms = Room.objects.all()[:5]
-        serializer = RoomSerializer(rooms, many=True).data
-        return Response(serializer)  # django response 와 rest_framework Response 는 다름!
-    elif request.method == "POST":
-        if not request.user.is_authenticated:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
-        # print(request.data)  # dict type, not json 출력됨
-        serializer = RoomSerializer(data=request.data)  # instance 안받고 data 만 인수로 받아서 serializer initiate
-        print(serializer)
-        print(dir(serializer))  # serializer 어트리뷰트(대부분 메서드) 확인 --create, update, save 중요
-        print(serializer.is_valid())  # 전송된 data 가 serializer valid 한지 확인 ( 모든 필드 충족시키는지)
-        if serializer.is_valid():
-            # serializer.create()  # never call create, update method directly
-            room = serializer.save(user=request.user)  # save() 가 create / update 구분해서 call 해준다 + validated_data 자동 전송됨
-            room_serializer = RoomSerializer(room).data
-            return Response(data=room_serializer, status=status.HTTP_200_OK)
-        else:
-            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#
+# @api_view(["GET", "POST"])  # django 가 아니라 rest_framework 에서 view 처리
+# def rooms_view(request):
+#     if request.method == "GET":
+#         rooms = Room.objects.all()[:5]
+#         serializer = RoomSerializer(rooms, many=True).data
+#         return Response(serializer)  # django response 와 rest_framework Response 는 다름!
+#     elif request.method == "POST":
+#         if not request.user.is_authenticated:
+#             return Response(status=status.HTTP_401_UNAUTHORIZED)
+#         # print(request.data)  # dict type, not json 출력됨
+#         serializer = RoomSerializer(data=request.data)  # instance 안받고 data 만 인수로 받아서 serializer initiate
+#         print(serializer)
+#         print(dir(serializer))  # serializer 어트리뷰트(대부분 메서드) 확인 --create, update, save 중요
+#         print(serializer.is_valid())  # 전송된 data 가 serializer valid 한지 확인 ( 모든 필드 충족시키는지)
+#         if serializer.is_valid():
+#             # serializer.create()  # never call create, update method directly
+#             room = serializer.save(user=request.user)  # save() 가 create / update 구분해서 call 해준다 + validated_data 자동 전송됨
+#             room_serializer = RoomSerializer(room).data
+#             return Response(data=room_serializer, status=status.HTTP_200_OK)
+#         else:
+#             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OwnPagination(PageNumberPagination):  # 반복 줄이기 / 공식 문서에서 다른 예시 찾아보기!
+    page_size = 20
 
 
 class RoomsView(APIView):
 
     def get(self, request):
-        rooms = Room.objects.all()[:5]
-        serializer = RoomSerializer(rooms, many=True).data
-        return Response(serializer)  # django response 와 rest_framework Response 는 다름!
+        # paginator= PageNumberPagination()
+        # paginator.page_size = 20
+        paginator = OwnPagination()
+        rooms = Room.objects.all()
+        results = paginator.paginate_queryset(rooms, request)  # parsing request - paginator 가 page query argument 찾는다.
+        serializer = RoomSerializer(results, many=True)  # .data 안써도돼? - response에서 쓴다.
+        # return response(serializer)  # django response 와 rest_framework Response 는 다름!
+        return paginator.get_paginated_response(serializer.data)  # page number, previous/next 기능 활용 위해 paginator response 함께 보냄
 
     def post(self, request):
         if not request.user.is_authenticated:
@@ -136,6 +148,16 @@ class RoomView(APIView):
 
     def update(self, instance, validated_data):
         print(instance, validated_data)
+
+
+@api_view(["GET"])
+def room_search(request):
+    paginator = PageNumberPagination()
+    paginator.page_size = 20
+    rooms = Room.objects.filter()
+    results = paginator.paginate_queryset(rooms, request)
+    serializer = RoomSerializer(results, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 
