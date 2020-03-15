@@ -152,9 +152,32 @@ class RoomView(APIView):
 
 @api_view(["GET"])
 def room_search(request):
-    paginator = PageNumberPagination()
-    paginator.page_size = 20
-    rooms = Room.objects.filter()
+    max_price = request.GET.get('max_price', None)  # url 에 포함될 argument, None 이 default
+    min_price = request.GET.get('min_price', None)
+    beds = request.GET.get('beds', None)
+    bedrooms = request.GET.get('bedrooms', None)
+    bathrooms = request.GET.get('bathrooms', None)
+    filter_kwargs = {}
+    if max_price is not None:
+        filter_kwargs["price__lte"] = max_price  # django documentation querysets 참조 __lte(less_then, from django)/__gte/__startswith ...
+    if min_price is not None:
+        filter_kwargs["price__gte"] = min_price
+    if beds is not None:
+        filter_kwargs["beds__gte"] = beds
+    if bedrooms is not None:
+        filter_kwargs["bedrooms__gte"] = bedrooms
+    if bathrooms is not None:
+        filter_kwargs["bathrooms__gte"] = bathrooms
+
+    # print(filter_kwargs)  # {key:value} 형식 출력
+    # print(*filter_kwargs)  # * : unpack once - key 값만 받음 ex. key, key
+    # print(**filter_kwargs)  # ** : unpack twice - key(ex.price__lte)=value(ex.'80'), key=value 으로 parse. print 안됨
+
+    paginator = OwnPagination()
+    try:
+        rooms = Room.objects.filter(**filter_kwargs)  # unpack 해서 넣어줌
+    except ValueError:
+        rooms = Room.objects.all()
     results = paginator.paginate_queryset(rooms, request)
     serializer = RoomSerializer(results, many=True)
     return paginator.get_paginated_response(serializer.data)
