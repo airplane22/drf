@@ -5,15 +5,12 @@ from .models import Room
 
 class RoomSerializer(serializers.ModelSerializer):
     user = RelatedUserSerializer()  # 바로 실행한다.
+    is_fav = serializers.SerializerMethodField()
 
     class Meta:
         model = Room
         exclude = ("modified",)
         read_only_fields = ("user", "id", "created", "updated")  # update 못하게 / ModelSerializer 에서만
-
-    # 메서드 활용하기 위해 커스텀
-    def create(self, validated_data):
-        return Room.objects.create(**validated_data)  # method create should return an object!!
 
     def validate(self, data):  # 전체 field validation
         # if not self.instance:  # update 할 때 (instance 받을 때)는 validate 하지 않도록
@@ -39,6 +36,20 @@ class RoomSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Your house is too small")  # validation error raise : "beds"
         else:
             return beds
+
+    def get_is_fav(self, obj):  # methodfield method / obj: current room
+        request = self.context.get("request")
+        if request:
+            user = request.user
+            if user.is_authenticated:
+                return obj in user.favs.all()  # room 이 fav 에 있는지 확인, bool
+        return False
+        print(obj)
+        return True
+
+    # 메서드 활용하기 위해 커스텀
+    def create(self, validated_data):
+        return Room.objects.create(**validated_data)  # method create should return an object!!
 
     def update(self, instance, validated_data):  # data 만 받아서 저장할 경우 create / instance 와 data 받아서 저장할 경우 update
         # update 하려면 instance 받아와야 initialize 할 수 있어! 라고 알려주는것

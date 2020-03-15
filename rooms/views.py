@@ -69,7 +69,7 @@ class RoomsView(APIView):
         paginator = OwnPagination()
         rooms = Room.objects.all()
         results = paginator.paginate_queryset(rooms, request)  # parsing request - paginator 가 page query argument 찾는다.
-        serializer = RoomSerializer(results, many=True)  # .data 안써도돼? - response에서 쓴다.
+        serializer = RoomSerializer(results, many=True, context={'request':request})  # .data 안써도돼? - response에서 쓴다.
         # return response(serializer)  # django response 와 rest_framework Response 는 다름!
         return paginator.get_paginated_response(serializer.data)  # page number, previous/next 기능 활용 위해 paginator response 함께 보냄
 
@@ -159,6 +159,7 @@ def room_search(request):
     bathrooms = request.GET.get('bathrooms', None)
     lat = request.GET.get('lat', None)
     lng = request.GET.get('lng', None)
+
     filter_kwargs = {}
     if max_price is not None:
         filter_kwargs["price__lte"] = max_price  # django documentation querysets 참조 __lte(less_then, from django)/__gte/__startswith ...
