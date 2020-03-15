@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from users.serializers import RelatedUserSerializer
+from users.serializers import UserSerializer
 from .models import Room
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    user = RelatedUserSerializer()  # 바로 실행한다.
+    user = UserSerializer(read_only=True)  # 바로 실행한다. modelserializer일때 readonly 넣어주기
     is_fav = serializers.SerializerMethodField()
 
     class Meta:
@@ -44,12 +44,14 @@ class RoomSerializer(serializers.ModelSerializer):
             if user.is_authenticated:
                 return obj in user.favs.all()  # room 이 fav 에 있는지 확인, bool
         return False
-        print(obj)
-        return True
 
     # 메서드 활용하기 위해 커스텀
     def create(self, validated_data):
-        return Room.objects.create(**validated_data)  # method create should return an object!!
+        request = self.context.get("request")
+        # drf class 문서 get_serializer_context method 참조. modelserializer 에서 request 이미 return
+
+        room = Room.objects.create(**validated_data, user=request.user)
+        return room  # method create should return an object!!
 
     def update(self, instance, validated_data):  # data 만 받아서 저장할 경우 create / instance 와 data 받아서 저장할 경우 update
         # update 하려면 instance 받아와야 initialize 할 수 있어! 라고 알려주는것
