@@ -24,13 +24,13 @@ class UsersViewSet(ModelViewSet):
         permission_classes = []
         if self.action == "list":  # 관리자만 user 목록
             permission_classes = [IsAdminUser]
-        elif self.action == "create" or self.action=="retrieve":  # 누구나 생성 가능, 누구나 1명 조회 가능
+        elif self.action == "create" or self.action=="retrieve" or self.action=="favs":  # 누구나 생성 가능, 누구나 1명 조회 가능
             permission_classes = [AllowAny]
         else:
-            permission_classes = [IsSelf]  # update, delete 는 본인만 가능하게
+            permission_classes = [IsSelf]  # update, delete 는 본인만 가능하게 + toggle_favs 포함!!!
         return [permission() for permission in permission_classes]
 
-    @action(detail=False, methods=["POST"])
+    @action(detail=False, methods=["POST"])  # detail=False : /users/ detail=True: /users/pk/
     def login(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
@@ -44,6 +44,36 @@ class UsersViewSet(ModelViewSet):
             return Response(data={"token":encoded_jwt, "id":user.pk})  # data= 언제 쓰고 언제 안쓰는가? / id 보내줘서 내가 누군지 알게 하기
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    @action(detail=True)  # permission_classes=
+    def favs(self, request, pk):  # detail=True일때 pk 받아줘야 함!
+        # user = request.user
+        user = self.get_object()  # 로그아웃 상태에서도 favs 볼 수 있게
+        serializer = RoomSerializer(user.favs.all(), many=True).data
+        return Response(serializer)
+
+    # different function, but same url(pk/favs/)
+    @favs.mapping.put  #extending favs with mapping (delete, post, put...)
+    def toggle_favs(self, request, pk):
+        pk = request.data.get("pk", None)
+        user = self.get_object()  # 어차피 permission 때문에 본인!
+        if pk is not None:
+            try:
+                room = Room.objects.get(pk=pk)
+
+                # favs 에 있으면 삭제, 없으면 추가
+                # 두가지 방법: url 인자로 받기 / data 로 받기
+
+                if room in user.favs.all():
+                    user.favs.remove(room)
+                else:
+                    user.favs.add(room)
+                return Response()
+            except Room.DoesNotExist:
+                pass
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
@@ -91,10 +121,10 @@ class FavsView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        user = request.user
-        serializer = RoomSerializer(user.favs.all(), many=True).data
-        return Response(serializer)
+    # def get(self, request):
+    #     user = request.user
+    #     serializer = RoomSerializer(user.favs.all(), many=True).data
+    #     return Response(serializer)
 
     def put(self, request):
         pk = request.data.get("pk", None)
