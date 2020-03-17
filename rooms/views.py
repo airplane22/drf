@@ -25,7 +25,7 @@ class RoomViewSet(ModelViewSet):  # drf viewsets
             permission_classes = [IsOwner]
         return [permission() for permission in permission_classes]  # permission_classes 에 있는 모든 permission 수행해라(for문 돌리는 효과)
 
-    @action(detail=False, methods=['GET'])  # detail=True : single obj
+    @action(detail=False)  # detail=True : single obj  method default 가 get
     def search(self, request):  # name of action = name of url / change name : url_path(action 가서 확인)
 
         max_price = request.GET.get('max_price', None)  # url 에 포함될 argument, None 이 default

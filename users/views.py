@@ -2,7 +2,7 @@ import jwt
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,6 +11,7 @@ from rest_framework.viewsets import ModelViewSet
 from rooms.models import Room
 from rooms.serializers import RoomSerializer
 from users.models import User
+from users.permissions import IsSelf
 from users.serializers import UserSerializer
 
 
@@ -25,7 +26,24 @@ class UsersViewSet(ModelViewSet):
             permission_classes = [IsAdminUser]
         elif self.action == "create" or self.action=="retrieve":  # 누구나 생성 가능, 누구나 1명 조회 가능
             permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsSelf]  # update, delete 는 본인만 가능하게
         return [permission() for permission in permission_classes]
+
+    @action(detail=False, methods=["POST"])
+    def login(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        if not username or not password:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            # jwt : json web token - 개인정보 포함 X, pk 같은 식별자만. 토큰은 누구나 해독 가능 / 우리 토큰이 변경되었는지 변경되지 않았는지를 확인하는 것.
+            # user 가 토큰 보내면 다시 확인해서 authentication. not from cookies, from token!
+            encoded_jwt = jwt.encode({'pk': user.pk}, settings.SECRET_KEY, algorithm='HS256')  # never import settings.py / import from django.settings
+            return Response(data={"token":encoded_jwt, "id":user.pk})  # data= 언제 쓰고 언제 안쓰는가? / id 보내줘서 내가 누군지 알게 하기
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 
@@ -41,27 +59,26 @@ class UsersViewSet(ModelViewSet):
 
 # MeView / user_detail 분리 이유 - MeView 는 url 에서 pk 안받는다. pk 안받아도 pk 값 확인할 수 있는 url 필요.
 
-
-class MeView(APIView):
-
-    permission_classes = [IsAuthenticated]  # fbv 에서는 @permission_classes([IsAuthenticated]) question header jwttoken으로 authenticated 되면 안되지 않나? 공개키인데
-
-    def get(self, request):
-        # permission_classes = [IsAuthenticated] 로 아래 주석 대체 가능
-        # if request.user.is_authenticated:  # is_authenticated : 로그인 여부 확인 user model attribute. @property 임!
-        #     return Response(ReadUserSerializer(request.user).data)
-        # else:
-        #     return Response(status=status.HTTP_401_UNAUTHORIZED)
-        return Response(UserSerializer(request.user).data)
-
-    def put(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response()
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+# /me 안쓰고 그냥 id 보내주기
+# class MeView(APIView):
+#
+#     permission_classes = [IsAuthenticated]  # fbv 에서는 @permission_classes([IsAuthenticated]) question header jwttoken으로 authenticated 되면 안되지 않나? 공개키인데
+#
+#     def get(self, request):
+#         # permission_classes = [IsAuthenticated] 로 아래 주석 대체 가능
+#         # if request.user.is_authenticated:  # is_authenticated : 로그인 여부 확인 user model attribute. @property 임!
+#         #     return Response(ReadUserSerializer(request.user).data)
+#         # else:
+#         #     return Response(status=status.HTTP_401_UNAUTHORIZED)
+#         return Response(UserSerializer(request.user).data)
+#
+#     def put(self, request):
+#         serializer = UserSerializer(request.user, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response()
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["GET", "POST"])
 @permission_classes(["IsAuthenticated"])
@@ -112,18 +129,18 @@ def user_detail(request, pk):
     except User.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-
-@api_view(["POST"])
-def login(request):
-    username = request.data.get("username")
-    password = request.data.get("password")
-    if not username or not password:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-    user = authenticate(username=username, password=password)
-    if user is not None:
-        # jwt : json web token - 개인정보 포함 X, pk 같은 식별자만. 토큰은 누구나 해독 가능 / 우리 토큰이 변경되었는지 변경되지 않았는지를 확인하는 것.
-        # user 가 토큰 보내면 다시 확인해서 authentication. not from cookies, from token!
-        encoded_jwt = jwt.encode({'pk': user.pk}, settings.SECRET_KEY, algorithm='HS256')  # never import settings.py / import from django.settings
-        return Response(data={"token":encoded_jwt})  # data= 언제 쓰고 언제 안쓰는가?
-    else:
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
+# UserView action으로 추가
+# @api_view(["POST"])
+# def login(request):
+#     username = request.data.get("username")
+#     password = request.data.get("password")
+#     if not username or not password:
+#         return Response(status=status.HTTP_400_BAD_REQUEST)
+#     user = authenticate(username=username, password=password)
+#     if user is not None:
+#         # jwt : json web token - 개인정보 포함 X, pk 같은 식별자만. 토큰은 누구나 해독 가능 / 우리 토큰이 변경되었는지 변경되지 않았는지를 확인하는 것.
+#         # user 가 토큰 보내면 다시 확인해서 authentication. not from cookies, from token!
+#         encoded_jwt = jwt.encode({'pk': user.pk}, settings.SECRET_KEY, algorithm='HS256')  # never import settings.py / import from django.settings
+#         return Response(data={"token":encoded_jwt})  # data= 언제 쓰고 언제 안쓰는가?
+#     else:
+#         return Response(status=status.HTTP_401_UNAUTHORIZED)
