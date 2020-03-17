@@ -8,6 +8,9 @@ from users.models import User
 
 # drf 문서 custom authentication 참조
 
+# AWS에서 header로 authentication : WSGIPassAuthorization on 해줘야함!
+# elastic beanstalk
+
 class JWTAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         # print(request.META)  # request meta 정보 열람

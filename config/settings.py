@@ -146,3 +146,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',  # apiview 쓸때 나오는 화면
     ]
 }
+
+# if DEBUG:
+#     REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES']= [
+#         'rest_framework.renderers.JSONRenderer'
+#     ]
