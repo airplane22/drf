@@ -3,9 +3,10 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 from rooms.models import Room
 from rooms.serializers import RoomSerializer
@@ -13,15 +14,30 @@ from users.models import User
 from users.serializers import UserSerializer
 
 
-class UsersView(APIView):
+class UsersViewSet(ModelViewSet):
 
-    def post(self, request):
-        serializer = UserSerializer(data=request.data)  # create 이니가 instance 안받고, partial=True 쓰면 안돼 모두 필요 / password 는 입력받고 create 에서 바꿔줄예정
-        if serializer.is_valid():
-            new_user = serializer.save()
-            return Response(UserSerializer(new_user).data)  #question .data 안써도돼? nico는 안쓴거같던데
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def get_permissions(self):
+        permission_classes = []
+        if self.action == "list":  # 관리자만 user 목록
+            permission_classes = [IsAdminUser]
+        elif self.action == "create" or self.action=="retrieve":  # 누구나 생성 가능, 누구나 1명 조회 가능
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
+
+
+
+# class UsersView(APIView):
+#
+#     def post(self, request):
+#         serializer = UserSerializer(data=request.data)  # create 이니가 instance 안받고, partial=True 쓰면 안돼 모두 필요 / password 는 입력받고 create 에서 바꿔줄예정
+#         if serializer.is_valid():
+#             new_user = serializer.save()
+#             return Response(UserSerializer(new_user).data)  #question .data 안써도돼? nico는 안쓴거같던데
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # MeView / user_detail 분리 이유 - MeView 는 url 에서 pk 안받는다. pk 안받아도 pk 값 확인할 수 있는 url 필요.
 
