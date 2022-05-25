@@ -4,4 +4,4 @@ django==3.0.3
 pillow==6.2.1
 django-seed==0.1.9
 djangorestframework==3.11.0
-pyjwt==1.7.1
+pyjwt==2.4.0
